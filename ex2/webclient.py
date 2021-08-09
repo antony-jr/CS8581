@@ -19,10 +19,23 @@ with S.socket(S.AF_INET, S.SOCK_STREAM) as fp:
 
     fp.send(mold_http_message(target_host))
 
-    response = fp.recv(1024) # Receive only 1KiB of the response from example.com
+    response_raw = []
+
+    fp.settimeout(2)
+    while True:
+        # Receive 1kib of response data from example.com
+        try:
+         data = fp.recv(1024)
+         response_raw.append(data.decode())
+        except:
+         break
+
+    fp.settimeout(None)
+
+    response = "".join(response_raw)
     length = len(response)
 
-    parts = response.decode().split('\r\n')
+    parts = response.split('\r\n')
     count = 0
 
     print("[HTTP Response] Length: {}".format(length))
@@ -35,7 +48,12 @@ with S.socket(S.AF_INET, S.SOCK_STREAM) as fp:
             break;
     print("--\n\n")
 
-    print("[HTTP Response BODY] -- ")
+    print("[HTTP Response BODY] (Saved Webpage to out.html) -- ")
     for i in parts[count:]:
         print(i)
     print("--")
+
+    ### This is optional.
+    with open("out.html", "w") as outfile:
+        for chunk in parts[count:]:
+            outfile.write(chunk)
